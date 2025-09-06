@@ -4,55 +4,39 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <title>Global Expansion Map</title>
-    <style>html,body,#root{height:100%;margin:0}#root{display:flex}</style>
+    <style>
+      html, body, #root { height: 100%; margin: 0; }
+      #root { display: flex; }
+    </style>
   </head>
   <body>
     <div id="root"></div>
 
+    <!-- React UMD -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+    <!-- Widget UMD (use the version you published, e.g. 0.0.2) -->
+    <script src="https://unpkg.com/global-expansion-widget@0.0.2/dist/global-expansion-map.umd.js"></script>
+
     <script>
       (async () => {
         const params = new URL(location.href).searchParams;
         const raw = params.get('config');
-        if (!raw) { document.body.innerHTML = 'Missing ?config=<public JSON URL>'; return; }
+        if (!raw) {
+          document.body.innerHTML = 'Missing ?config=<public JSON URL>';
+          return;
+        }
         const cfgUrl = raw.includes('%') ? decodeURIComponent(raw) : raw;
 
-        const v = '0.0.1';
-        const candidates = [
-          `https://unpkg.com/global-expansion-widget@${v}/dist/global-expansion-map.umd.js?v=${Date.now()}`,
-          `https://cdn.jsdelivr.net/npm/global-expansion-widget@${v}/dist/global-expansion-map.umd.js?v=${Date.now()}`
-        ];
-
-        async function load(url) {
-          await new Promise((resolve, reject) => {
-            const s = document.createElement('script');
-            s.src = url;
-            s.onload = resolve;
-            s.onerror = () => reject(new Error('Failed to load: ' + url));
-            document.head.appendChild(s);
-          });
-        }
-
-        let loaded = false;
-        for (const url of candidates) {
-          try {
-            await load(url);
-            loaded = true;
-            break;
-          } catch (e) {
-            console.warn(e.message);
-          }
-        }
-        if (!loaded) { document.body.innerHTML = 'Error: widget script failed to load from CDNs.'; return; }
-
         try {
+          // Fetch config with cache-bust
           const res = await fetch(cfgUrl + (cfgUrl.includes('?') ? '&' : '?') + 't=' + Date.now());
           if (!res.ok) throw new Error('Config not found: ' + res.status);
           const cfg = await res.json();
 
-          const lib = window.GlobalExpansionMap; // UMD global (library object or default)
-          const Comp = lib && (lib.GlobalExpansionMap || lib.default || lib);
+          // UMD default export is the component (window.GlobalExpansionMap)
+          const Comp = window.GlobalExpansionMap;
           if (!Comp) throw new Error('Widget not loaded');
 
           const root = ReactDOM.createRoot(document.getElementById('root'));
