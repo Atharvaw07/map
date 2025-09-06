@@ -1,0 +1,7 @@
+{
+  "logoUrl": "https://example.com/logo.svg",
+  "offices": [
+    { "id": "hq", "name": "HQ", "latitude": 37.3349, "longitude": -122.0090 },
+    { "id": "eu", "name": "EU Office", "mapslink": "https://www.google.com/maps?q=52.52,13.405" }
+  ]
+}

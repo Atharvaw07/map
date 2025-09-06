@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>Global Map</title>
+    <style>html,body,#root{height:100%;margin:0}</style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/global-expansion-widget@0.0.1/dist/global-expansion-map.umd.js"></script>
+    <script>
+      (async function () {
+        const u = new URL(location.href);
+        const cfgUrl = u.searchParams.get('config');
+        if (!cfgUrl) { document.body.innerHTML = 'Missing ?config=<public JSON URL>'; return; }
+
+        try {
+          const cfg = await fetch(cfgUrl, { cache: 'no-store' }).then(r => {
+            if (!r.ok) throw new Error('Config not found: ' + r.status);
+            return r.json();
+          });
+
+          const Comp = (window.GlobalExpansionMap && window.GlobalExpansionMap.GlobalExpansionMap);
+          if (!Comp) throw new Error('Widget not loaded');
+
+          const root = ReactDOM.createRoot(document.getElementById('root'));
+          root.render(React.createElement(Comp, {
+            logoUrl: cfg.logoUrl,
+            offices: Array.isArray(cfg.offices) ? cfg.offices : []
+          }));
+        } catch (e) {
+          document.body.innerHTML = 'Error: ' + e.message;
+        }
+      })();
+    </script>
+  </body>
+</html>
