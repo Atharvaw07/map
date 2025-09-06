@@ -7,26 +7,23 @@
     <style>html,body,#root{height:100%;margin:0}#root{display:flex}</style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">Loading…</div>
 
     <script type="module">
-      // React from CDN (ESM)
+      // React from CDN
       import React from 'https://esm.sh/react@19';
       import { createRoot } from 'https://esm.sh/react-dom@19/client';
-      // Widget as ESM via esm.sh with deps rewritten to CDN URLs
-      // Change 0.0.2 to your latest published version if different
-      import GlobalExpansionMap from 'https://esm.sh/global-expansion-widget@0.0.2?deps=react@19,react-dom@19';
+      // Widget as ESM (bundled), peers resolved via deps
+      import GlobalExpansionMap from 'https://esm.sh/global-expansion-widget@0.0.2?bundle&deps=react@19,react-dom@19';
 
-      // Minimal NODE_ENV shim (some deps read it)
+      // Minimal shim
       window.process = { env: { NODE_ENV: 'production' } };
 
-      const params = new URL(location.href).searchParams;
-      const raw = params.get('config');
-      if (!raw) {
-        document.body.textContent = 'Missing ?config=<public JSON URL>';
-      } else {
+      async function main() {
+        const raw = new URL(location.href).searchParams.get('config');
+        if (!raw) { document.body.textContent = 'Missing ?config=<public JSON URL>'; return; }
         let cfgUrl = raw; try { cfgUrl = decodeURIComponent(raw); } catch {}
-        const res = await fetch(cfgUrl + (cfgUrl.includes('?') ? '&' : '?') + 't=' + Date.now());
+        const res = await fetch(cfgUrl + (cfgUrl.includes('?')?'&':'?')+'t='+Date.now());
         if (!res.ok) throw new Error('Config not found: ' + res.status);
         const cfg = await res.json();
 
@@ -36,6 +33,11 @@
           offices: Array.isArray(cfg.offices) ? cfg.offices : []
         }));
       }
+
+      main().catch(err => {
+        document.getElementById('root').textContent = 'Error: ' + err.message;
+        console.error(err);
+      });
     </script>
   </body>
 </html>
