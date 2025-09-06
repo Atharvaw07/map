@@ -4,40 +4,52 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <title>Global Expansion Map</title>
-    <style>html,body,#root{height:100%;margin:0}#root{display:flex}</style>
+    <style>
+      html, body, #root { height: 100%; margin: 0; }
+      #root { display: flex; }
+    </style>
   </head>
   <body>
     <div id="root">Loading…</div>
 
-    <script type="module">
-      // React from CDN
-      import React from 'https://esm.sh/react@19';
-      import { createRoot } from 'https://esm.sh/react-dom@19/client';
-      // Widget as ESM (bundled), peers resolved via deps
-      import GlobalExpansionMap from 'https://esm.sh/global-expansion-widget@0.0.2?bundle&deps=react@19,react-dom@19';
+    <!-- React UMD (peer) -->
+    <script src="https://unpkg.com/react@19/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@19/umd/react-dom.production.min.js"></script>
 
-      // Minimal shim
-      window.process = { env: { NODE_ENV: 'production' } };
+    <!-- Small shims some libs expect -->
+    <script>window.process={env:{NODE_ENV:'production'}};window.global=window;</script>
 
-      async function main() {
-        const raw = new URL(location.href).searchParams.get('config');
-        if (!raw) { document.body.textContent = 'Missing ?config=<public JSON URL>'; return; }
-        let cfgUrl = raw; try { cfgUrl = decodeURIComponent(raw); } catch {}
-        const res = await fetch(cfgUrl + (cfgUrl.includes('?')?'&':'?')+'t='+Date.now());
-        if (!res.ok) throw new Error('Config not found: ' + res.status);
-        const cfg = await res.json();
+    <!-- Widget UMD (pinned to 0.0.5) -->
+    <script src="https://unpkg.com/global-expansion-widget@0.0.5/dist/global-expansion-map.umd.js?v=0.0.5"></script>
 
-        const root = createRoot(document.getElementById('root'));
-        root.render(React.createElement(GlobalExpansionMap, {
-          logoUrl: cfg.logoUrl,
-          offices: Array.isArray(cfg.offices) ? cfg.offices : []
-        }));
-      }
+    <script>
+      (async () => {
+        const params = new URL(location.href).searchParams;
+        const raw = params.get('config');
+        if (!raw) { document.getElementById('root').textContent = 'Missing ?config=<public JSON URL>'; return; }
 
-      main().catch(err => {
-        document.getElementById('root').textContent = 'Error: ' + err.message;
-        console.error(err);
-      });
+        let cfgUrl = raw;
+        try { cfgUrl = decodeURIComponent(raw); } catch (_) {}
+
+        try {
+          const res = await fetch(cfgUrl + (cfgUrl.includes('?') ? '&' : '?') + 't=' + Date.now());
+          if (!res.ok) throw new Error('Config not found: ' + res.status);
+          const cfg = await res.json();
+
+          // UMD default export is assigned to window.GlobalExpansionMap
+          const Comp = window.GlobalExpansionMap;
+          if (typeof Comp !== 'function') throw new Error('Widget not loaded');
+
+          const root = ReactDOM.createRoot(document.getElementById('root'));
+          root.render(React.createElement(Comp, {
+            logoUrl: cfg.logoUrl,
+            offices: Array.isArray(cfg.offices) ? cfg.offices : []
+          }));
+        } catch (e) {
+          document.getElementById('root').textContent = 'Error: ' + e.message + ' | URL: ' + cfgUrl;
+          console.error(e);
+        }
+      })();
     </script>
   </body>
 </html>
