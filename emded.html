@@ -9,44 +9,29 @@
   <body>
     <div id="root"></div>
 
-    <!-- React UMD (match the library's peer range) -->
     <script src="https://unpkg.com/react@19/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@19/umd/react-dom.production.min.js"></script>
-
-    <!-- Shim for deps that expect process/global -->
     <script>window.process={env:{NODE_ENV:'production'}};window.global=window;</script>
-
-    <!-- Widget (pin to your latest published version) -->
-    <script src="https://unpkg.com/global-expansion-widget@0.0.2/dist/global-expansion-map.umd.js?v=<?=Date.now()?>"></script>
+    <script src="https://unpkg.com/global-expansion-widget@0.0.2/dist/global-expansion-map.umd.js"></script>
 
     <script>
       (async () => {
         const raw = new URL(location.href).searchParams.get('config');
         if (!raw) { document.body.innerHTML = 'Missing ?config=<public JSON URL>'; return; }
-        let cfgUrl = raw; try { cfgUrl = decodeURIComponent(raw); } catch (_) {}
-
-        const res = await fetch(cfgUrl + (cfgUrl.includes('?')?'&':'?') + 't=' + Date.now());
+        let cfgUrl = raw; try { cfgUrl = decodeURIComponent(raw); } catch {}
+        const res = await fetch(cfgUrl + (cfgUrl.includes('?')?'&':'?')+'t='+Date.now());
         if (!res.ok) throw new Error('Config not found: ' + res.status);
         const cfg = await res.json();
 
-        // Resolve the component from the UMD global robustly
         const lib = window.GlobalExpansionMap;
-        const Comp =
-          (typeof lib === 'function' && lib) ||
-          (lib && typeof lib.default === 'function' && lib.default) ||
-          (lib && typeof lib.GlobalExpansionMap === 'function' && lib.GlobalExpansionMap);
-
+        const Comp = (typeof lib === 'function' && lib) ||
+                     (lib && typeof lib.default === 'function' && lib.default) ||
+                     (lib && typeof lib.GlobalExpansionMap === 'function' && lib.GlobalExpansionMap);
         if (typeof Comp !== 'function') throw new Error('Widget not loaded');
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(React.createElement(Comp, {
-          logoUrl: cfg.logoUrl,
-          offices: Array.isArray(cfg.offices) ? cfg.offices : []
-        }));
-      })().catch(e => {
-        document.body.innerHTML = 'Error: ' + e.message;
-        console.error(e);
-      });
+        root.render(React.createElement(Comp, { logoUrl: cfg.logoUrl, offices: Array.isArray(cfg.offices)?cfg.offices:[] }));
+      })().catch(e => { document.body.innerHTML = 'Error: ' + e.message; console.error(e); });
     </script>
   </body>
 </html>
