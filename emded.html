@@ -10,25 +10,32 @@
     <div id="root"></div>
 
     <script type="module">
+      // React from CDN (ESM)
       import React from 'https://esm.sh/react@19';
       import { createRoot } from 'https://esm.sh/react-dom@19/client';
+      // Widget as ESM via esm.sh with deps rewritten to CDN URLs
+      // Change 0.0.2 to your latest published version if different
       import GlobalExpansionMap from 'https://esm.sh/global-expansion-widget@0.0.2?deps=react@19,react-dom@19';
 
+      // Minimal NODE_ENV shim (some deps read it)
       window.process = { env: { NODE_ENV: 'production' } };
 
-      const raw = new URL(location.href).searchParams.get('config');
-      if (!raw) { document.body.textContent = 'Missing ?config=<public JSON URL>'; throw new Error('missing config'); }
-      let cfgUrl = raw; try { cfgUrl = decodeURIComponent(raw); } catch {}
+      const params = new URL(location.href).searchParams;
+      const raw = params.get('config');
+      if (!raw) {
+        document.body.textContent = 'Missing ?config=<public JSON URL>';
+      } else {
+        let cfgUrl = raw; try { cfgUrl = decodeURIComponent(raw); } catch {}
+        const res = await fetch(cfgUrl + (cfgUrl.includes('?') ? '&' : '?') + 't=' + Date.now());
+        if (!res.ok) throw new Error('Config not found: ' + res.status);
+        const cfg = await res.json();
 
-      const res = await fetch(cfgUrl + (cfgUrl.includes('?')?'&':'?') + 't=' + Date.now());
-      if (!res.ok) throw new Error('Config not found: ' + res.status);
-      const cfg = await res.json();
-
-      const root = createRoot(document.getElementById('root'));
-      root.render(React.createElement(GlobalExpansionMap, {
-        logoUrl: cfg.logoUrl,
-        offices: Array.isArray(cfg.offices) ? cfg.offices : []
-      }));
+        const root = createRoot(document.getElementById('root'));
+        root.render(React.createElement(GlobalExpansionMap, {
+          logoUrl: cfg.logoUrl,
+          offices: Array.isArray(cfg.offices) ? cfg.offices : []
+        }));
+      }
     </script>
   </body>
 </html>
